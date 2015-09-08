@@ -147,7 +147,7 @@ Vector<string> findLadder(string startWord, string endWord, Lexicon &dictionary)
     ladders.enqueue(ladder);
 
     while (!ladders.isEmpty()){ // go through all over the queue
-        ladder = ladders.dequeue(); //read end remove the top of the ladder
+        ladder = ladders.dequeue(); //read end remove the top of the queue
 
         if(ladder[ladder.size() - 1] == endWord) return ladder; // if shortest ladder is found
 
