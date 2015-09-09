@@ -110,7 +110,6 @@ win32 {
     QMAKE_LFLAGS += -Wl,--stack,536870912
     LIBS += -lDbghelp
     LIBS += -lbfd
-    LIBS += -liberty
     LIBS += -limagehlp
 }
 macx {
