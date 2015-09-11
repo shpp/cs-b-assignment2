@@ -26,9 +26,9 @@ int main() {
     string text = getSourceText(); // get the original text file into a string
     cout << endl;
     int k = getInteger("Choose order of analysis (1 to 10):"); // get the number of the order to build the model
-    Map<string,Vector<char>> map = analyzeText(text,k); //
-    string seed = findSeed(map);
-    string randomText = generateText(map, seed);
+    Map<string,Vector<char>> map = analyzeText(text,k); //  read a source text, build an order-k Markov model for it
+    string seed = findSeed(map); // get initial seed
+    string randomText = generateText(map, seed); //  generating random text
     cout << endl;
     cout << randomText;
 
