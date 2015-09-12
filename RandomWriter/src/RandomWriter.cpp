@@ -11,9 +11,10 @@
 #include "stack.h"
 #include "queue.h"
 #include "timer.h"
+#include "hashmap.h"
 
 using namespace std;
-
+/* ==== Version 2 (improved productivity of program)       ==== */
 /* FILE READING */
 string fileInput(string promptText);
 int levelInput(string promptText);
@@ -24,7 +25,7 @@ string getLevelSeed(istream & infile,
                     int modelLevel,
                     Stack<char>& stack);
 string getSymbolAfterSeed(istream & infile);
-void returnCharsToStream(istream & infile,Stack<char>& stack);
+void returnCharsToStream(istream & infile, Stack<char>& stack);
 
 void modifyMap(Map<string, Vector<string>>& mainMap,
                string seed,
@@ -32,6 +33,8 @@ void modifyMap(Map<string, Vector<string>>& mainMap,
 /* Level 0-model Text GENERATION */
 void generate_0_levelText(Map<string, Vector<string>>& fileMap, int printSymbQty);
 Map<string, Vector<string>> getStatisticMap(Map<string, Vector<string>>& fileMap);
+void generate_0_levelText_v2(Map<string, Vector<string>>& fileMap, int printSymbQty);
+HashMap<string, float> getStatisticMap_v2(Map<string, Vector<string>>& fileMap);
 
 /* Level N-model Text GENERATION */
 void generate_N_levelText(Map<string, Vector<string>>& fileMap, int printSymbQty);
@@ -57,6 +60,7 @@ int main() {
 
     cout << "Processing..." << endl;
     Timer timer1(true);
+
     cout << "=========================================" << endl;
     /* Prepare input stream object   */
     ifstream infile;
@@ -67,23 +71,22 @@ int main() {
     /* If whole file is read program closes stream */
     infile.close();
 
-    cout << "MAP BUILD TIME IS " << timer1.elapsed() << endl;
-
     timer1.stop();
-    Timer timer2(true);
+    cout << "MAP BUILD TIME IS " << timer1.elapsed() << " ms" << endl;;
 
+    Timer timer2(true);
     cout << "=========================================" << endl;
 
     if(modelLevel > 0){
         generate_N_levelText(fileMap, resultTextSymbolsQty);
     }else{
-        generate_0_levelText(fileMap, resultTextSymbolsQty);
+        generate_0_levelText_v2(fileMap, resultTextSymbolsQty);
     }
 
     cout << endl;
     cout << "=========== END OF GENERATION ==========="<< endl;
-    cout << "TEXT BUILD TIME IS " << timer2.elapsed() << endl;
     timer2.stop();
+    cout << "TEXT BUILD TIME IS " << timer2.elapsed() << " ms" << endl;
 
     return 0;
 }
@@ -158,7 +161,7 @@ void modifyMap(Map<string, Vector<string>>& mainMap,
 
 /* This function calls after seed creation by getLevelSeed
  * Return chars ffrom stack to stream */
-void returnCharsToStream(istream & infile,Stack<char>& stack){
+void returnCharsToStream(istream & infile, Stack<char>& stack){
     while(!stack.isEmpty()){
         char symbol = stack.pop();
         infile.putback(symbol);
@@ -218,7 +221,8 @@ Map<string, Vector<string>> getStatisticMap(Map<string, Vector<string>>& fileMap
 void generate_N_levelText(Map<string, Vector<string>>& fileMap, int printSymbQty){
     string startSeed = getFrequentSeed(fileMap);
     cout << "THE MOST FREQUENT SEED IS: \"" << startSeed << "\"" << endl;
-    cout << "============= GENERATED TEXT ============" << endl;
+    cout << "============= GENERATED TEXT ============" << endl;   
+    /* Text generation begins */
     cout <<startSeed;
 
     int counter = 0;
@@ -250,13 +254,15 @@ string getFrequentSeed(Map<string, Vector<string>>& fileMap){
     return result;
 }
 
+/* Mdified for version 2 - improved productivity */
 /* Next symbol is get from seed statistic vector due to its probability in vector */
 string getRandomSymbol(string key, Map<string, Vector<string>>& map){
     if(map.containsKey(key)){
         int thisKeyVecSize = map[key].size();
         int randomInt = randomInteger(0, (thisKeyVecSize - 1));
-        Vector<string> vec = map[key];
-        return vec[randomInt];
+        //Vector<string> vec = map[key];
+        string result = map[key].get(randomInt);
+        return result;
     }else{
         return "no symbols";
     }
@@ -294,4 +300,65 @@ int levelInput(string promptText){
 void consoleSettings(){
     setConsoleWindowTitle(programTitle);
     setConsoleEcho(consoleEcho);
+}
+
+/* Attempt to improve function productivity
+ * For 0-level text generating we have rule:
+ * - every new symbol of text appear after seed due to this symbol
+ *   statistic probability */
+void generate_0_levelText_v2(Map<string, Vector<string>>& fileMap, int printSymbQty){
+    string startSeed = getFrequentSeed(fileMap);
+    cout << "THE MOST FREQUENT SEED IS: \"" << startSeed << "\"" << endl;
+    cout << "============= GENERATED TEXT ============" << endl;
+
+    /* First text symbol generation */
+    cout <<startSeed;
+
+    int counter = 0;
+    /* For Level-0 Model every next symbol apear in text due to it's probability
+     * I will try to improve productivity of function new algoryth:
+     * - Statistic map symbol value of it's statistic probability
+     * - We will iterate throgh this map randomly, and print symbols
+     *   due to their probabilites values  */
+    HashMap<string, float> statisticMap = getStatisticMap_v2(fileMap);
+    /* Main text generation process */
+    while(counter < printSymbQty){
+        for (string key: statisticMap){
+            if(counter < printSymbQty){
+                /* Decide if this symbol will be printed to text */
+                float probability = statisticMap[key];
+                string nextPrintSymbol = key;
+                bool isPrint = randomChance(probability);
+                if(isPrint){
+                    cout << nextPrintSymbol;
+                    counter++;
+                }
+            }else{
+                break;
+            }
+        }
+    }
+}
+
+/* Returns map of all kind of symbols in text with their probabilites as values */
+HashMap<string, float> getStatisticMap_v2(Map<string, Vector<string>>& fileMap){
+    HashMap<string, float> result;
+    Map<string, int> statisticTable;
+    int symbolsInTextQty = 0;
+    /* Count total quantity of symbols in text, and
+     * quantity of their apearence - as a map - statisticTable */
+    for(string key: fileMap){
+        int keyVectorSize = fileMap[key].size();
+        symbolsInTextQty += keyVectorSize;
+        /* We supose that apearence of every symbol equal it's vector size */
+        statisticTable.put(key, keyVectorSize);
+    }
+    /* Now we get total quantity of symbols in text
+     * Create map of symbols with their probabilites as values */
+    for(string key: statisticTable){
+        int thisSymbolQty = statisticTable[key];
+        float thisSymbolProbability = (thisSymbolQty /((float) symbolsInTextQty));
+        result.put(key, thisSymbolProbability);
+    }
+    return result;
 }
