@@ -14,16 +14,14 @@
 #include "hashmap.h"
 
 using namespace std;
-/* ==== Version 2 (improved productivity of program)       ==== */
+/* == Version 3 (improved productivity of program - reading == */
 /* FILE READING */
 string fileInput(string promptText);
 int levelInput(string promptText);
 
 Map<string, Vector<string>> getFileMap(istream & infile, int modelLevel);
 string getLevelSeed(istream & infile,
-                    char seedChar,
-                    int modelLevel,
-                    Stack<char>& stack);
+                    int modelLevel);
 string getSymbolAfterSeed(istream & infile);
 void returnCharsToStream(istream & infile, Stack<char>& stack);
 
@@ -53,14 +51,16 @@ int main() {
     string fileName = fileInput("Enter file name: ");
     //string fileName = "MiddleMarch.txt";
     //string fileName = "Readme.txt";
+    //string fileName = "Hamlet.txt";
+    //string fileName = "TomSawyer.txt";
 
-    int modelLevel = levelInput("Enter model level range (1-10): ");
+    int modelLevel = levelInput("Enter model level range (0-10): ");
     /* Generated text symbols qty */
     int resultTextSymbolsQty = 2000;
-
+    /* Start of main process and timing */
     cout << "Processing..." << endl;
     Timer timer1(true);
-
+    /* Program reads some text file, processes it, and generate new text due to data */
     cout << "=========================================" << endl;
     /* Prepare input stream object   */
     ifstream infile;
@@ -70,19 +70,19 @@ int main() {
     Map<string, Vector<string>> fileMap = getFileMap(infile, modelLevel);
     /* If whole file is read program closes stream */
     infile.close();
-
+    /* Map building time stops */
     timer1.stop();
     cout << "MAP BUILD TIME IS " << timer1.elapsed() << " ms" << endl;;
-
+    /* New text generating time starting */
     Timer timer2(true);
     cout << "=========================================" << endl;
-
+    /* Acidentally I make 0-level process too */
     if(modelLevel > 0){
         generate_N_levelText(fileMap, resultTextSymbolsQty);
     }else{
         generate_0_levelText_v2(fileMap, resultTextSymbolsQty);
     }
-
+    /* End of generation - timing stops */
     cout << endl;
     cout << "=========== END OF GENERATION ==========="<< endl;
     timer2.stop();
@@ -94,18 +94,18 @@ int main() {
 /* Main read text process - seeds map creating */
 Map<string, Vector<string>> getFileMap(istream & infile, int modelLevel){
         Map<string, Vector<string>> resultMap;
-        char startSeedChar;
-        while ((startSeedChar = infile.get()) != EOF) {
-            /* Stack for chars from seed */
-            Stack<char> stack;
-            /* Take chars from stream to build seed for required level */
-            string seed = getLevelSeed(infile, startSeedChar, modelLevel, stack);
+        /* Create start seed due to maodel level */
+        string seed = getLevelSeed(infile, modelLevel);
+
+        char nextChar;
+        while ((nextChar = infile.get()) != EOF) {
             /* Get next symbol after such seed */
-            string nextSymbol = getSymbolAfterSeed(infile);
-            /* Return chars from stack to stream */
-            returnCharsToStream(infile, stack);
+            string nextSymbol = charToString(nextChar);
             /* Fills resultMap by obtained seed as key and nextSymbol as result  */
             modifyMap(resultMap, seed, nextSymbol);
+            /* Modify seed - take away first sumbol and add nextSymbol to end */
+            seed.erase(0,1);
+            seed += nextSymbol;
         }
         return resultMap;
 }
@@ -121,28 +121,25 @@ string getSymbolAfterSeed(istream & infile){
     return result;
 }
 
-/* Get seedChar - next char from stream, and builds seed of
- * required length */
-string getLevelSeed(istream & infile,
-                    char seedChar,
-                    int modelLevel,
-                    Stack<char>& stack){
-    /* seed begins from seedChar */
-    string result = charToString(seedChar);
-    if(modelLevel > 0){
-        for(int i = 1; i < modelLevel; i++){
-            char nextChar;
-            if ((nextChar = infile.get()) != EOF){
-                /* Adds next text symbols to seed */
-                result += charToString(nextChar);
-                /* Stores taken seed chars to stack
-                 * It'll enables to return them back to stream letter */
-                stack.push(nextChar);
+/* Builds first seed of required length */
+string getLevelSeed(istream & infile, int modelLevel){
+    string result = "";
+    char nextChar;
+    /* Take one symbol from stream anyway, for 0 model or 1 model */
+    if((nextChar = infile.get()) != EOF){
+        result += nextChar;
+    }
+    /* For 2 model and higher - seed chars quantity equal model level value */
+    if(modelLevel > 1){
+        for (int i = 1; i < modelLevel; i++){
+            if((nextChar = infile.get()) != EOF){
+                result += nextChar;
             }
         }
     }
     return result;
 }
+
 
 /* Modifies main file map - adds seeds and modifies nexy chars vectors */
 void modifyMap(Map<string, Vector<string>>& mainMap,
