@@ -69,10 +69,13 @@ int numberDifferentLetters(string wordToCheck,string lastWord){
 Vector<string> findNewWordsInDic(string lastWord, Vector<string> & oldChain){
     Vector<string> res;
     // look for words, that not equ lastWord & has 1 difference in letters from it & is'nt in oldChain Vector.
+    int i=0;
     for(string word:dic){
+        i++;
         if((word==lastWord)||(word=="")||(wordAlreadyInOldChain(word,oldChain))||(numberDifferentLetters(word,lastWord)>1))
             continue;
         res.add(word);
+        dic[i-1]="";
     }
     return res;
 }
