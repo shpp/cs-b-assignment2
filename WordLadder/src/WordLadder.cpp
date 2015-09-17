@@ -135,11 +135,13 @@ bool singleLetterDifference(string &word1, string &word2) {
 
 /**
  * findShortestladder
- * function checks if the words have one different letter in the same position
+ * function is the wrapper for ladder building loop
+ * returnes the shurtest word ladder between source and destination words
  * 
- * @param word1 - first word to compare
- * @param word2 - second word to compare
- * @result - boolean
+ * @param startWord - the beginning of word ladder
+ * @param destinationWord - the end of word ladder
+ * @param similarWords - words bank (to search intermediate words from)
+ * @result - Vector of words (ladder) in regular order
  **/
 StrArray findShortestladder(string & startWord, string & destinationWord, Lexicon & similarWords) {
 
